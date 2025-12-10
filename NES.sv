@@ -1113,7 +1113,7 @@ end
 reg bk_pending;
 wire save_written, mapper_has_flashsaves;
 always @(posedge clk) begin
-	if ((mapper_flags[25] || fds || mapper_has_flashsaves) && ~OSD_STATUS && save_written)
+	if ((mapper_flags[25] || fds || mapper_has_flashsaves) && save_written)
 		bk_pending <= 1'b1;
 	else if (bk_state)
 		bk_pending <= 1'b0;
@@ -1255,12 +1255,13 @@ always @(posedge clk) begin
 end
 
 wire bk_load    = status[6];
-wire bk_save    = status[7] | (bk_pending & OSD_STATUS && ~status[50]);
+wire bk_save    = status[7] | (bk_pending & ~status[50]);
 reg  bk_loading = 0;
 reg  bk_loading_req = 0;
 reg  bk_request = 0;
 wire bk_busy = (bk_state == S_COPY);
 reg  fds_busy;
+reg  sram_loaded = 0;
 
 wire [10:0] save_sz = fds ? rom_sz[17:9] :
                       bram_en ? 11'd3 :
@@ -1277,7 +1278,7 @@ always @(posedge clk) begin : save_block
 	old_downloading <= downloading;
 
 	old_load <= bk_load & bk_ena;
-	old_save <= bk_save & bk_ena;
+	old_save <= bk_save & bk_ena & sram_loaded;  // Only allow save if SRAM is loaded
 	old_ack  <= sd_ack;
 	fds_busy <= (bk_state != S_IDLE) || bk_request;
 
@@ -1286,10 +1287,14 @@ always @(posedge clk) begin : save_block
 	if (downloading) begin
 		bk_state <= S_IDLE;
 		bk_request <= 0;
+		sram_loaded <= 0;
 	end else if(bk_state == S_IDLE) begin
 		if((~old_load & bk_load) | (~old_save & bk_save)) begin
-			bk_loading <= bk_load;
-			bk_request <= 1;
+			// Only start a new save/load if no operation is in progress
+			if (!bk_request) begin
+				bk_loading <= bk_load;
+				bk_request <= 1;
+			end
 		end
 		if(old_downloading & ~downloading & |img_size & bk_ena) begin
 			bk_loading <= 1;
@@ -1305,6 +1310,8 @@ always @(posedge clk) begin : save_block
 	end else begin
 		if(old_ack & ~sd_ack) begin
 			if(sd_lba == save_sz) begin
+				// Mark SRAM as loaded when a load operation completes
+				if(bk_loading) sram_loaded <= 1;
 				bk_loading <= 0;
 				bk_state <= S_IDLE;
 			end else begin
