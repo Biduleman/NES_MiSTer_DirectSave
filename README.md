@@ -2,6 +2,13 @@
 
 This is an FPGA implementation of the NES/Famicom based on [FPGANES](https://github.com/strigeus/fpganes) by Ludvig Strigeus and ported to MiSTer.
 
+## !!!WARNING!!!
+This version of the core has the OSD check disabled for saving. If AUTOSAVE is turned ON, anytime the SRAM is written to, it will also be written to the SD card with **no confirmation from the user**.
+
+This is highly experimental, I am not responsible for any MiSTer installation rendered inoperable, any lost files or any broken SD cards.
+
+**INSTALL AT YOUR OWN RISK**
+
 ## Features
  * Supports saves for most games
  * Savestates
@@ -16,9 +23,10 @@ This is an FPGA implementation of the NES/Famicom based on [FPGANES](https://git
  * Supports expansion audio from mappers including VRC6 & 7, MMC5, Namco 163 and Sunsoft 5b
  * Supports many popular mappers including VRC1-7, MMC0-5, and many more (see below)
  * Supports large games such as Legend of Link and Rockman Minus Infinity
+ * Autosave works without opening the OSD.
 
 ## Installation
-Copy the NES_\*.rbf file to the directory or subdirectory of `/media/fat/`. Create a `games/NES/` directory on the root of the SD card (`/media/fat/games/NES/`), and place NES roms (\*.nes) inside this NES directory. The ROMs must have an iNES or NES2.0 header, which most already do. NES2.0 headers are preferred for the best accuracy. To have an NES or FDS game ROM load automatically upon starting the core, place it in the NES directory named as boot1.rom or boot2.rom, respectively.
+Copy the `SNES_20251209.rbf` file to the directory or subdirectory of `/media/fat/`. Create a `games/NES/` directory on the root of the SD card (`/media/fat/games/NES/`), and place NES roms (\*.nes) inside this NES directory. The ROMs must have an iNES or NES2.0 header, which most already do. NES2.0 headers are preferred for the best accuracy. To have an NES or FDS game ROM load automatically upon starting the core, place it in the NES directory named as boot1.rom or boot2.rom, respectively.
 - `boot0.rom` = FDS BIOS file.  Will be used for any FDS images loaded
 - `boot1.rom` = NES Cart file.  Can be used with boot0.rom (BIOS) in place
 - `boot2.rom` = FDS image file.  Requires boot0.rom (BIOS).  Use a blank FDS (header only) to boot the FDS BIOS without a disk image.
@@ -31,7 +39,7 @@ Before loading \*.FDS files, you must first load the official, unpatched FDS BIO
 This feature will double the number of sprites drawn per scanlines, decreasing the flickering sprites that NES is known for. Some games relied on the 8 sprite behavior to work correctly, such as Simon's Quest swamps. Other mappers may be impacted by using extra sprites. While it works well in most games, glitches may occur with this enabled.
 
 ## Saving and Loading
-The battery backed RAM (Save RAM) for the NES does not write to disk automatically. After saving in your game, you must then write the RAM to the SD card by selecting **Save Backup RAM** from the menu. If you do not save your RAM to disk, the contents will be lost next time you restart the core or switch games. Alternatively you can enable to Autosave option from the OSD menu, and if you do your games will be recorded to disk every time you open the OSD menu. FDS saving uses the same method as for cartridge RAM saves. Save RAM is stored as a .sav file based on the NES/FDS filename in `/media/fat/saves/NES/`.  Examples:  
+The battery backed RAM (Save RAM) for the NES writes to disk automatically. After saving in your game, you must then write the RAM to the SD card by selecting **Save Backup RAM** from the menu. If you do not save your RAM to disk, the contents will be lost next time you restart the core or switch games. Alternatively you can enable to Autosave option from the OSD menu, and if you do your games will be recorded to disk every time the SRAM is written. FDS saving uses the same method as for cartridge RAM saves. Save RAM is stored as a .sav file based on the NES/FDS filename in `/media/fat/saves/NES/`.  Examples:  
 `Metroid (Japan) (Rev 3).fds` -> `Metroid (Japan) (Rev 3).sav`  
 `Legend of Zelda, The (USA) (Rev 1).nes` -> `Legend of Zelda, The (USA) (Rev 1).sav`
 
